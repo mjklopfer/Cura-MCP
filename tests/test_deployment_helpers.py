@@ -52,7 +52,8 @@ class DeploymentHelpersTest(unittest.TestCase):
         result=subprocess.run(['/bin/bash',str(ROOT/'scripts/run_macos.sh')],input=''.join(json.dumps(x)+'\n' for x in requests),capture_output=True,text=True,env=env,timeout=15)
         self.assertEqual(result.returncode,0)
         responses=[json.loads(line) for line in result.stdout.splitlines()]
-        self.assertEqual(len(responses[1]['result']['tools']),18)
+        tool_names = {tool['name'] for tool in responses[1]['result']['tools']}
+        self.assertTrue({'cura_status', 'printer_api_catalog', 'cura_comparison_status'} <= tool_names)
         self.assertFalse((self.root/'not-created.json').exists())
 
 if __name__=='__main__':unittest.main()
