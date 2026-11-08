@@ -14,6 +14,7 @@
 - Add layer inspection, snapshots, estimates, and cancellable slice comparisons.
 - Discover and dispatch native extension menu actions and queue local package changes.
 - Include an original STL sample and a repeatable comparison workflow.
+- Configure and validate Griffin pauses using Cura 5.14's text layer field.
 
 ## 0.1.7
 

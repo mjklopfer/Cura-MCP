@@ -10,6 +10,19 @@ SAFE = {"pause_at": "layer_no", "pause_method": "griffin", "redo_layer": False,
         "custom_gcode_after_pause": "", "beep_at_pause": False}
 
 
+def pause_settings(script, layer):
+    definitions = script.getSettingData()["settings"]
+    values = dict(SAFE)
+    # Cura 5.14 accepts preview-layer lists as text and removed Redo Layer.
+    if definitions.get("pause_layer", {}).get("type") == "str":
+        layer = str(layer)
+        if "redo_layer" not in definitions:
+            values.pop("redo_layer")
+        if "enable_pause_at_height" in definitions:
+            values["enable_pause_at_height"] = True
+    return {**values, "pause_layer": layer}
+
+
 def revision(plugin, stack):
     # The native serialized configuration binds options and ordering, including
     # settings of scripts we do not expose for editing.
@@ -59,7 +72,7 @@ def execute(plugin, stack, action, payload):
         plugin.addScriptToList(KEY)
         try:
             script = plugin._script_list[-1]
-            values = {**SAFE, "pause_layer": layer}
+            values = pause_settings(script, layer)
             if not values.keys() <= script.getSettingData()["settings"].keys():
                 raise ValueError("Unsupported native Pause at Height script version")
             for key, value in values.items():
@@ -84,12 +97,14 @@ def export_lines(plugin, stack, chunks):
     if list(plugin.scriptList) != [KEY]:
         raise ValueError("MCP export supports one native Griffin pause; remove other scripts or export using Cura's UI")
     script = plugin._script_list[0]
-    if stack.getProperty("machine_gcode_flavor", "value") != "Griffin" or any(
-            script.getSettingValueByKey(key) != val for key, val in SAFE.items()):
-        raise ValueError("MCP export supports only the Griffin layer pause with no extra commands")
     layer = script.getSettingValueByKey("pause_layer")
-    if type(layer) is not int or layer < 1:
+    if isinstance(layer, str) and re.fullmatch(r"[0-9]{1,6}", layer):
+        layer = int(layer)
+    if type(layer) is not int or not 1 <= layer <= 100000:
         raise ValueError("Invalid Griffin pause layer")
+    if stack.getProperty("machine_gcode_flavor", "value") != "Griffin" or any(
+            script.getSettingValueByKey(key) != val for key, val in pause_settings(script, layer).items()):
+        raise ValueError("MCP export supports only the Griffin layer pause with no extra commands")
     before = "".join(chunks)
     markers = list(re.finditer(r"(?m)^;LAYER:(-?\d+)\r?$", before))
     target = [m for m in markers if int(m.group(1)) == layer]

@@ -18,6 +18,9 @@ class Script:
     def getSettingValueByKey(self, key):
         return self.values[key]
 
+    def getSettingData(self):
+        return {"settings": {key: {} for key in self.values}}
+
     def execute(self, chunks):
         chunks[2] = "; Native pause\nM0 ; Do the actual pause\n" + chunks[2]
         return chunks if self.result is None else self.result
@@ -55,6 +58,16 @@ class ExportTest(unittest.TestCase):
         self.assertEqual(layer, 1)
         self.assertIn("M0 ; Do the actual pause\n;LAYER:1", output[0])
         self.assertNotIn("M0", "".join(self.raw))
+
+    def test_cura_514_text_layer_exports_one_pause(self):
+        script = self.plugin._script_list[0]
+        script.values.pop("redo_layer")
+        script.values.update(pause_layer="1", enable_pause_at_height=True)
+        script.getSettingData = lambda: {"settings": {
+            **{key: {} for key in script.values}, "pause_layer": {"type": "str"}}}
+        output, layer = pp.export_lines(self.plugin, Stack(), self.raw)
+        self.assertEqual(layer, 1)
+        self.assertIn("M0 ; Do the actual pause\n;LAYER:1", output[0])
 
     def test_discovery_reads_cura_list_properties(self):
         result = pp.inspect(self.plugin, Stack())

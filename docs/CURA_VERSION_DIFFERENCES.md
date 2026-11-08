@@ -6,6 +6,7 @@
 | Windows profile root | `%APPDATA%\cura\5.13` | `%APPDATA%\cura\5.14` |
 | macOS profile root | `~/Library/Application Support/cura/5.13` | `~/Library/Application Support/cura/5.14` |
 | Installer and MCP runtime | Set `CURA_MCP_CURA_VERSION=5.13` or supply explicit paths | Default target |
+| Native Pause at Height layer field | Integer layer setting with Redo Layer | Text field for the last completed Preview layer, with no Redo Layer setting |
 | Earlier live coverage | Configuration and extension discovery, preset listing and confirmation preview | Scene controls, estimates, layer inspection, profile export, package inventory, and new comparison smoke testing |
 
 Install the plugin under `plugins/CuraMcpBridge` inside the selected profile
@@ -29,6 +30,12 @@ menus. In 5.14.0 the package manager exposes pending-restart state as a
 property. Comparison waits for the CuraEngine settings-change timer before
 forcing a slice. Earlier 5.13 smoke results cover the earlier bridge
 revision. Treat new commands on 5.13 as unverified until rerun there.
+
+The bridge accepts the same zero-based `pause_layer` boundary in both versions.
+In 5.14, `pause_layer: 23` sets the native field to text `"23"`. The pause follows
+Preview layer 23 and precedes G-code layer 23. Export checks the position of the
+single Griffin `M0` and verifies that the rest of the command sequence matches
+the native slice.
 
 The existing Tabbed Settings add-on reported that its installed build is
 untested on Cura 5.14 and disabled itself. Native Cura settings and the
