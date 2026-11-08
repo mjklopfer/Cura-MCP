@@ -1,6 +1,6 @@
 # Windows PC deployment
 
-Target: Cura 5.13.0 and a local stdio MCP process. Node 22 is the tested offline
+Target: Cura 5.14.0 and a local stdio MCP process. Node 22 is the tested offline
 baseline (code minimum 20); use external Python 3.10+. Cura supplies its own
 plugin runtime. This is a user-local install; administrator access is not needed
 for the normal configuration folder.
@@ -14,7 +14,7 @@ for the normal configuration folder.
    `python scripts/install_plugin.py` to inspect the plan, then
    `python scripts/install_plugin.py --apply` to install. The helper preserves
    the existing connection file, profiles and credentials and backs up the plugin.
-3. Relaunch Cura once. By default its config is under `APPDATA/cura/5.13`.
+3. Relaunch Cura once. By default its config is under `APPDATA/cura/5.14`.
    Verify with **Help > Show Configuration Folder**; `--config-dir` supports an
    explicitly selected configuration directory.
 4. Copy the [Windows MCP template](../examples/mcp-client-windows.json) into the

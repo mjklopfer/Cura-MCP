@@ -8,7 +8,7 @@ thread. Do not expose its port directly to the Internet.
 ## Install the Cura plugin
 
 Save your work and quit every Cura instance. Copy `cura_plugin/CuraMcpBridge` as
-one folder under Cura 5.13's `plugins` directory. Back up an existing plugin
+one folder under Cura 5.14's `plugins` directory. Back up an existing plugin
 first. Cura's **Help > Show Configuration Folder** is the preferred way to find
 the correct version's folder. Relaunch Cura once after installation.
 
@@ -16,8 +16,8 @@ The platform defaults are constructed from the user's home directory at runtime:
 
 | Platform | Plugin directory, relative to home | Private connection file, relative to home |
 |---|---|---|
-| Windows | AppData/Roaming/cura/5.13/plugins | AppData/Roaming/cura/5.13/cura-mcp-bridge.json |
-| macOS | Library/Application Support/cura/5.13/plugins | Library/Application Support/cura/5.13/cura-mcp-bridge.json |
+| Windows | AppData/Roaming/cura/5.14/plugins | AppData/Roaming/cura/5.14/cura-mcp-bridge.json |
+| macOS | Library/Application Support/cura/5.14/plugins | Library/Application Support/cura/5.14/cura-mcp-bridge.json |
 
 The plugin creates the connection file. It contains a token; never commit,
 upload, paste or include it in an issue. This repository does not include one.

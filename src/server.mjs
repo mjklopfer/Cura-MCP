@@ -7,21 +7,13 @@
  * always re-check the printer immediately before contacting it.
  */
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import readline from "node:readline";
 import crypto from "node:crypto";
 import {printerApiTools, handlePrinterApi} from './printer-api.mjs';
 import {curaApiTools, handleCuraApi} from './cura-api.mjs';
 
-function defaultConnectionPath() {
-  if (process.platform === "darwin") {
-    return path.join(os.homedir(), "Library", "Application Support", "cura", "5.13", "cura-mcp-bridge.json");
-  }
-  return path.join(process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"), "cura", "5.13", "cura-mcp-bridge.json");
-}
-
-const CONNECTION_PATH = process.env.CURA_MCP_BRIDGE_CONNECTION_PATH || defaultConnectionPath();
+import {connectionPath as CONNECTION_PATH} from "./cura-connection.mjs";
 import {printerBaseUrl} from "./printer-config.mjs";
 const PRINT_FILE_ROOT = path.resolve(process.env.CURA_MCP_PRINT_FILE_ROOT || path.join(process.cwd(), "print_files"));
 const CONFIRMATION_TTL_MS = 5 * 60_000;
@@ -290,13 +282,16 @@ async function handle(request) {
     return {
       protocolVersion: request.params?.protocolVersion || "2025-06-18",
       capabilities: { tools: {} },
-      serverInfo: { name: "cura-mcp-bridge", version: "0.1.7" }
+      serverInfo: { name: "cura-mcp-bridge", version: "0.1.8" }
     };
   }
   if (request.method === "tools/list") return { tools: [...tools, ...printerApiTools, ...curaApiTools] };
   if (request.method === "tools/call") {
     if (curaApiTools.some(tool => tool.name === request.params?.name)) {
       const payload = await handleCuraApi(request.params.name, request.params.arguments || {});
+      if (request.params.name === 'cura_snapshot' && payload.image_png) {
+        return {content:[{type:'image',mimeType:'image/png',data:payload.image_png}]};
+      }
       return {content:[{type:'text',text:JSON.stringify(payload,null,2)}],structuredContent:payload,isError:!!payload.error};
     }
     if (printerApiTools.some(tool => tool.name === request.params?.name)) {

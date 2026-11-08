@@ -7,6 +7,14 @@
 - Generic UMB/D-Bus extension map, independent probe buses and disabled build guards.
 - Physical pin assignments, real STM32 builds, startup and hardware compatibility remain unvalidated.
 
+## 0.1.8
+
+- Target Cura 5.14.0 and document the version-specific setup for 5.13 and 5.14.
+- Add native scene editing, per-model overrides, profile management, and STL export.
+- Add layer inspection, snapshots, estimates, and cancellable slice comparisons.
+- Discover and dispatch native extension menu actions and queue local package changes.
+- Include an original STL sample and a repeatable comparison workflow.
+
 ## 0.1.7
 
 - Reference Cura and printer firmware versions in the setup documentation.

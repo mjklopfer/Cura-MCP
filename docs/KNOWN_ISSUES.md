@@ -2,29 +2,26 @@
 
 ## Cura bridge
 
-- [ ] Implement selected missing wrappers using the reviewed Cura/Uranium 5.13
-  operations and managers; see [upstream research](UPSTREAM_RESEARCH.md).
-  The Live Scripting plugin is a reference, not an installed solution.
-
 - [ ] Investigate connector-level HTTP 429 handling: identify throttling layers,
   quota/concurrency conditions and Retry-After guidance using redacted diagnostics.
   Assess bounded read backoff without replaying state-changing requests whose
   execution outcome is uncertain. Distinguish connector availability from local
   Cura/printer availability.
 
-- Only Cura 5.13.0 has a live desktop baseline. Public privacy/configuration changes
-  have offline coverage; a fresh public-build desktop check is still required.
+- Cura 5.14.0 has live Windows smoke coverage. New operations on 5.13.0 and
+  macOS need equivalent desktop tests.
 - Native 3MF machine/material/settings conflict resolution can require Cura's UI.
 - Current-project path tracking is reliable for bridge loads/saves; a native UI
   project open may clear the known path. Use explicit Save As rather than guessing.
-- Scene inspection lacks stable object IDs, detailed transforms, bounds and units.
-- Move/rotate/scale/mirror/lay-flat, grouping/arrangement, undo/redo, per-object
-  settings/extruder assignment, and multiple-plate workflows need native wrappers.
-- Named material/core/nozzle/quality/intent/profile selection and machine/network
-  printer selection need wrappers. Numeric effective-setting edits are available.
+- Scene IDs apply to the live scene. Undo/redo and full multiple-plate workflows
+  need native wrappers.
+- Printer, material and core switching and profile create/update/import need
+  additional live tests.
 - Detailed slice progress, cancellation, validation errors and stale-result identity
   are not exposed as complete workflows. Successful slicing is not a physical test.
-- Exports beyond G-code/native project save need native writer wrappers.
+- Local package queueing and native extension menu dispatch need live transaction
+  tests. Remote Marketplace transactions and extension-specific dialog controls
+  remain open.
 - Save jobs should be observed until completion; workspace edits during saving are
   unsupported. Request retry after a timeout requires inspecting current state.
 

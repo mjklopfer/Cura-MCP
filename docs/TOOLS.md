@@ -1,6 +1,6 @@
 # MCP tools
 
-There are 18 tools. The [complete local HTTP inventory](ENDPOINTS.csv) lists every method/path. The [complete local HTTP inventory](ENDPOINTS.csv) lists every method/path. Confirmation is not execution. Read-only inspection of Cura
+There are 26 tools. The [complete local HTTP inventory](ENDPOINTS.csv) lists every method/path. Read-only inspection of Cura
 uses an authenticated loopback POST internally to schedule work on Cura's main
 thread; it does not imply a printer write.
 
@@ -20,7 +20,15 @@ thread; it does not imply a printer write.
 | printer_api_write | Execute the matching authorized printer write |
 | cura_inspect | Inspect Cura's configured machine, settings/scene/backend context |
 | cura_settings | Read effective global/extruder setting values |
-| confirm_cura_operation | Bind settings, slicing, G-code export or project save |
+| cura_configuration | Inspect printer, material, core, intent, and profile choices |
+| cura_extensions | List extensions, native menus, packages and post-processing scripts |
+| cura_navigate | Open a supported Cura stage, tool, or dialog |
+| cura_snapshot | Capture a native PNG of the active plate |
+| cura_estimates | Read duration and material estimates for the active sliced plate |
+| cura_layers | Inspect layer markers, feature types and tool changes |
+| cura_comparison_status | Poll a slice comparison |
+| cura_comparison_cancel | Cancel a comparison and restore temporary settings |
+| confirm_cura_operation | Bind a desktop action to an exact request and applicable state |
 | cura_operation | Execute the authorized Cura operation |
 | cura_project_save_status | Poll native project-save completion or failure |
 | cura_path_info | Check a path from Cura's process without returning its contents |

@@ -6,8 +6,8 @@ from urllib.parse import urlsplit
 def connection_default():
     configured=os.environ.get('CURA_MCP_BRIDGE_CONNECTION_PATH')
     if configured:return Path(configured).expanduser()
-    if sys.platform=='darwin':return Path.home()/'Library/Application Support/cura/5.13/cura-mcp-bridge.json'
-    return Path(os.environ.get('APPDATA',str(Path.home()/'AppData/Roaming')))/'cura/5.13/cura-mcp-bridge.json'
+    if sys.platform=='darwin':return Path.home()/'Library/Application Support/cura'/os.environ.get('CURA_MCP_CURA_VERSION','5.14')/'cura-mcp-bridge.json'
+    return Path(os.environ.get('APPDATA',str(Path.home()/'AppData/Roaming')))/'cura'/os.environ.get('CURA_MCP_CURA_VERSION','5.14')/'cura-mcp-bridge.json'
 
 def inspect(connection,check_listener=False):
     result={'platform':sys.platform,'python_compatible':sys.version_info>=(3,10),'connection_file_exists':connection.is_file(),'connection_parseable':False,'token_present':False,'connection_is_loopback':False,'port_valid':False,'listener_checked':check_listener,'printer_origin_configured':bool(os.environ.get('CURA_PRINTER_BASE_URL'))}

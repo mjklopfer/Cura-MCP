@@ -14,13 +14,14 @@ RULES={
 IPV4=re.compile(r'(?<![\w.])(?:\d{1,3}\.){3}\d{1,3}(?![\w.])')
 ALLOWED_EXTENSIONS={'.md','.json','.mjs','.py','.sh','.ps1','.h','.cpp','.ino','.properties','.csv','.yml','.yaml','.toml','.txt'}
 SPECIAL={'LICENSE','.gitignore','.gitattributes'}
+ASCII_FIXTURES={'examples/comparison-sample.stl'}
 
 def scan(root=ROOT):
     findings=[];count=0
     for path in sorted(root.rglob('*')):
         if not path.is_file() or any(part in {'.git','__pycache__','node_modules','build'} for part in path.relative_to(root).parts):continue
         relative=path.relative_to(root).as_posix()
-        if path.suffix not in ALLOWED_EXTENSIONS and path.name not in SPECIAL:
+        if path.suffix not in ALLOWED_EXTENSIONS and path.name not in SPECIAL and relative not in ASCII_FIXTURES:
             findings.append({'file':relative,'rule':'unreviewed-file-type'});continue
         if path.name in {'connection.json','cura-mcp-bridge.json','.env'}:
             findings.append({'file':relative,'rule':'private-runtime-file'});continue
@@ -28,6 +29,11 @@ def scan(root=ROOT):
         except UnicodeError:
             findings.append({'file':relative,'rule':'binary-file'});continue
         count+=1
+        if relative in ASCII_FIXTURES and not re.fullmatch(
+                r'solid comparison_sample\n(?:  facet normal [-\d ]+\n    outer loop\n'
+                r'(?:      vertex [-\d ]+\n){3}    endloop\n  endfacet\n){12}'
+                r'endsolid comparison_sample\n',text):
+            findings.append({'file':relative,'rule':'unexpected-stl-fixture-content'})
         # The checker necessarily contains its own regex and deliberately bad URL test.
         if relative=='scripts/privacy_check.py':continue
         for name,pattern in RULES.items():

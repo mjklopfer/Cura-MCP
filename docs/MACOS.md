@@ -1,6 +1,6 @@
 # macOS deployment and adjunct tools
 
-Target: Cura 5.13.0, external Node 22 as the tested offline baseline (code minimum
+Target: Cura 5.14.0, external Node 22 as the tested offline baseline (code minimum
 20), and external Python 3.10+. Cura supplies the plugin's Python/Qt libraries;
 do not install a separate PyQt package into Cura for this bridge.
 
@@ -43,7 +43,7 @@ copy a connection file, touch Keychain, install Node/Python, change profiles or
 start a print. Relaunch Cura once after installation.
 
 The default config directory is derived from home as
-`Library/Application Support/cura/5.13`. Use Cura's **Help > Show Configuration
+`Library/Application Support/cura/5.14`. Use Cura's **Help > Show Configuration
 Folder** and `--config-dir /path/to/configuration` if the actual directory differs.
 The installer does not install or alter an MCP client/tunnel service.
 

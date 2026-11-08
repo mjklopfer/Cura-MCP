@@ -20,7 +20,7 @@ fi
 "$CURA_MCP_PYTHON" -c 'import sys; sys.exit(0 if sys.version_info >= (3,10) else 1)' || { echo "Python 3.10+ is required." >&2; exit 1; }
 export CURA_MCP_PYTHON
 export CURA_PRINTER_BASE_URL="${CURA_PRINTER_BASE_URL:?Set CURA_PRINTER_BASE_URL to your printer HTTP origin}"
-export CURA_MCP_BRIDGE_CONNECTION_PATH="${CURA_MCP_BRIDGE_CONNECTION_PATH:-$HOME/Library/Application Support/cura/5.13/cura-mcp-bridge.json}"
+export CURA_MCP_BRIDGE_CONNECTION_PATH="${CURA_MCP_BRIDGE_CONNECTION_PATH:-$HOME/Library/Application Support/cura/${CURA_MCP_CURA_VERSION:-5.14}/cura-mcp-bridge.json}"
 export CURA_MCP_PRINT_FILE_ROOT="${CURA_MCP_PRINT_FILE_ROOT:-$HOME/Library/Application Support/CuraMcpBridge/print_files}"
 mkdir -p "$CURA_MCP_PRINT_FILE_ROOT"
 exec "$NODE" "$SCRIPT_DIR/src/server.mjs"

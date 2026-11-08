@@ -1,4 +1,4 @@
-"""Loopback-only MCP status and guarded workspace-command endpoint for Cura 5.13."""
+"""Loopback-only MCP status and guarded workspace-command endpoint for Cura."""
 import json
 import os
 import secrets
@@ -8,11 +8,13 @@ import threading
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from .project_io import path_info, plan_save, atomic_project_write
+from . import scene_ops, post_processing, configuration_ops, comparison
 
 from PyQt6.QtCore import QObject, QTimer, QUrl
 
 from UM.Extension import Extension
 from UM.Logger import Logger
+from UM.Resources import Resources
 
 
 class ExclusiveLoopbackServer(ThreadingHTTPServer):
@@ -41,6 +43,7 @@ class CuraMcpBridge(QObject, Extension):
         self._pending_project = None
         self._tracking_connected = False
         self._save_jobs = {}
+        self._comparison = None
         self._snapshot = {"schema_version": 1, "ready": False, "detail": "Cura bridge is starting."}
         self._connection_path = os.path.join(self._preferences_directory(), self.CONNECTION_FILE)
         self._token = self._load_or_create_token()
@@ -57,9 +60,7 @@ class CuraMcpBridge(QObject, Extension):
 
     @staticmethod
     def _preferences_directory():
-        if sys.platform == "darwin":
-            return os.path.join(os.path.expanduser("~"), "Library", "Application Support", "cura", "5.13")
-        return os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")), "cura", "5.13")
+        return Resources.getConfigStoragePath()
 
     def _load_or_create_token(self):
         try:
@@ -79,7 +80,7 @@ class CuraMcpBridge(QObject, Extension):
             self._snapshot = {
                 "schema_version": 1,
                 "ready": True,
-                "bridge_version": "0.1.7",
+                "bridge_version": "0.1.8",
                 "process_id": os.getpid(),
                 "printer": None,
                 "active_profile": None,
@@ -111,8 +112,12 @@ class CuraMcpBridge(QObject, Extension):
 
             def do_POST(self):
                 command_name = self.path.removeprefix('/v1/commands/')
-                if command_name not in {'load_file', 'inspect', 'get_settings', 'set_settings', 'slice', 'export_gcode',
-                                        'path_info', 'plan_project_save', 'save_project', 'project_save_status'}:
+                if command_name not in {'load_file', 'inspect', 'get_settings', 'set_settings', 'reset_settings', 'slice', 'export_gcode',
+                                        'path_info', 'plan_project_save', 'save_project', 'project_save_status',
+                                        'inspect_extensions', 'navigate', 'inspect_configuration',
+                                        'set_configuration', 'inspect_estimates', 'inspect_layers', 'snapshot',
+                                        'compare_slices', 'comparison_status', 'cancel_comparison',
+                                        'manage_package', 'activate_extension_menu'} | scene_ops.ACTIONS | post_processing.ACTIONS:
                     self.send_error(404)
                     return
                 if not secrets.compare_digest(self.headers.get("X-Cura-Bridge-Token", ""), bridge._token):
@@ -191,8 +196,23 @@ class CuraMcpBridge(QObject, Extension):
             if job is None:
                 raise ValueError('Unknown project save operation')
             return {key: value for key, value in job.items() if key not in ('job', 'callback')}
-        if action in ('load_file', 'set_settings', 'slice', 'save_project') and any(j['status'] == 'running' for j in self._save_jobs.values()):
+        mutations = {'load_file', 'set_settings', 'reset_settings', 'slice', 'save_project',
+                     'set_configuration', 'compare_slices', 'manage_package',
+                     'activate_extension_menu'} | scene_ops.ACTIONS | post_processing.ACTIONS
+        if action in mutations and any(j['status'] == 'running' for j in self._save_jobs.values()):
             raise ValueError('A project save is running; poll its status before changing the workspace')
+        if action in {'comparison_status', 'cancel_comparison'}:
+            comparison_id = payload.get('comparison_id')
+            if self._comparison is None or (
+                    (comparison_id is not None or action == 'cancel_comparison') and
+                    self._comparison.id != comparison_id):
+                raise ValueError('Unknown slice comparison')
+            if action == 'cancel_comparison':
+                self._comparison.cancel()
+            return self._comparison.report()
+        if self._comparison and self._comparison.status == 'running' and action in (
+                mutations | {'export_gcode', 'inspect_estimates', 'inspect_layers'}):
+            raise ValueError('A slice comparison is running; poll or cancel it first')
         if action == 'load_file':
             filename = payload.get('file_path')
             info = path_info(filename)
@@ -216,18 +236,134 @@ class CuraMcpBridge(QObject, Extension):
         stack = app.getGlobalContainerStack()
         if stack is None:
             raise ValueError('No active Cura machine')
+        if action == 'compare_slices':
+            self._comparison = comparison.Comparison(app, stack, payload.get('variants'),
+                payload.get('expected_scene'), payload.get('expected_configuration'), self)
+            return self._comparison.report()
+        if action == 'manage_package':
+            return configuration_ops.manage_package(app.getPackageManager(), payload)
+        if action == 'activate_extension_menu':
+            plugin_id, item = payload.get('target_id'), payload.get('menu_item')
+            choices = [extension for extension in app.getExtensions()
+                       if extension.getPluginId() == plugin_id and item in extension.getMenuItemList()]
+            if len(choices) != 1 or choices[0] is self:
+                raise ValueError('Choose one exact active extension menu action')
+            QTimer.singleShot(0, lambda: choices[0].activateMenuItem(item))
+            return {'plugin_id': plugin_id, 'menu_item': item, 'scheduled': True}
+        if action == 'inspect_configuration':
+            return configuration_ops.inspect(app, stack)
+        if action == 'set_configuration':
+            return configuration_ops.execute(app, stack, payload)
+        if action in {'inspect_estimates', 'inspect_layers'}:
+            from UM.Backend.Backend import BackendState
+            scene = app.getController().getScene()
+            plate = app.getMultiBuildPlateModel().activeBuildPlate
+            if app.getBackend()._backend_state != BackendState.Done or not getattr(scene, 'gcode_dict', {}).get(plate):
+                return {'available': False, 'build_plate': plate}
+            if action == 'inspect_layers':
+                chunks = scene.gcode_dict[plate]
+                return {'available': True, 'build_plate': plate, **scene_ops.inspect_layers(chunks, payload)}
+            info = app.getPrintInformation()
+            return {'available': True, 'build_plate': plate,
+                    'duration_seconds': int(info.currentPrintTime),
+                    'material_lengths': list(info.materialLengths),
+                    'material_weights': list(info.materialWeights),
+                    'material_names': list(info.materialNames)}
+        if action == 'snapshot':
+            import base64
+            from PyQt6.QtCore import QByteArray, QBuffer, QIODevice
+            from cura.Snapshot import Snapshot
+            image = Snapshot.isometricSnapshot(400, 400)
+            if image is None or image.isNull():
+                raise ValueError('No renderable build plate snapshot is available')
+            data = QByteArray()
+            buffer = QBuffer(data)
+            if not buffer.open(QIODevice.OpenModeFlag.WriteOnly) or not image.save(buffer, 'PNG'):
+                raise ValueError('Cura could not encode the build plate snapshot')
+            return {'image_png': base64.b64encode(bytes(data)).decode('ascii')}
+        if action in {'inspect_extensions', 'navigate', 'inspect', 'export_gcode'} | post_processing.ACTIONS:
+            from UM.PluginRegistry import PluginRegistry
+            registry = PluginRegistry.getInstance()
+            active_plugins = registry.getActivePlugins()
+            processor = (registry.getPluginObject('PostProcessingPlugin')
+                         if 'PostProcessingPlugin' in active_plugins else None)
+        if action == 'inspect_extensions':
+            controller = app.getController()
+            current = controller.getActiveStage()
+            packages = app.getPackageManager()
+            return {'active_plugins': sorted(active_plugins),
+                    'extension_menus': [{'plugin_id': extension.getPluginId(),
+                                         'name': extension.getMenuName(),
+                                         'items': extension.getMenuItemList()}
+                                        for extension in app.getExtensions()
+                                        if extension is not self and extension.getMenuItemList()],
+                    'marketplace': {**configuration_ops.package_state(packages),
+                                    'signed_in': bool(app.getCuraAPI().account.isLoggedIn)},
+                    'stages': sorted(controller.getAllStages()),
+                    'active_stage': current.getId() if current else None,
+                    'tools': sorted(controller.getAllTools()),
+                    'navigation': ['prepare', 'preview', 'monitor', 'post_processing', 'marketplace', 'account_sign_in',
+                                   'move', 'scale', 'rotate', 'mirror'],
+                    'post_processing': post_processing.inspect(processor, stack) if processor else None}
+        if action == 'navigate':
+            controller = app.getController()
+            view = payload.get('view')
+            stages = {'prepare': 'PrepareStage', 'preview': 'PreviewStage', 'monitor': 'MonitorStage'}
+            tools = {'move': 'TranslateTool', 'scale': 'ScaleTool',
+                     'rotate': 'RotateTool', 'mirror': 'MirrorTool'}
+            if view == 'post_processing' and processor:
+                processor.showPopup()
+            elif view == 'marketplace' and 'Marketplace' in active_plugins:
+                registry.getPluginObject('Marketplace').show()
+            elif view == 'account_sign_in':
+                account = app.getCuraAPI().account
+                if account.isLoggedIn:
+                    return {'view': view, 'already_signed_in': True}
+                QTimer.singleShot(0, account.login)
+            elif view in stages and stages[view] in controller.getAllStages():
+                controller.setActiveStage(stages[view])
+                active = controller.getActiveStage()
+                if not active or active.getId() != stages[view]:
+                    raise ValueError('Cura did not switch to the requested stage')
+            elif view in tools and tools[view] in controller.getAllTools():
+                controller.setActiveTool(tools[view])
+                active = controller.getActiveTool()
+                if not active or active.getId() != tools[view]:
+                    raise ValueError('Cura did not activate the requested toolbar tool')
+            else:
+                raise ValueError('Requested Cura view or toolbar tool is unavailable')
+            return {'view': view, 'requested': True}
+        if action in post_processing.ACTIONS:
+            if not processor:
+                raise ValueError('Cura Post Processing extension is unavailable')
+            return post_processing.execute(processor, stack, action, payload)
+        if action in scene_ops.ACTIONS:
+            from cura.CuraActions import CuraActions
+            from UM.Scene.Selection import Selection
+            from UM.Scene.Iterator.DepthFirstIterator import DepthFirstIterator
+            root = app.getController().getScene().getRoot()
+            return scene_ops.execute(action, payload, app, stack, root,
+                                     list(DepthFirstIterator(root)), Selection, CuraActions)
         if action == 'inspect':
             scene = app.getController().getScene()
             from UM.Scene.Iterator.DepthFirstIterator import DepthFirstIterator
+            root = scene.getRoot()
+            _, scene_nodes, scene_revision = scene_ops.scene_snapshot(
+                root, list(DepthFirstIterator(root)), stack)
             objects = [{'name': node.getName()} for node in DepthFirstIterator(scene.getRoot())
                        if hasattr(node, 'callDecoration') and node.callDecoration('isSliceable') and node.getMeshData() is not None]
             return {'machine': {'id': stack.getId(), 'name': stack.getName()},
                     'quality': stack.quality.getName(),
                     'extruders': [{'position': extruder.position, 'material': extruder.material.getName(),
-                                   'variant': extruder.variant.getName()} for extruder in stack.extruderList],
+                                   'variant': extruder.variant.getName(), 'enabled': bool(extruder.isEnabled),
+                                   'id': extruder.getId()} for extruder in stack.extruderList],
+                    'scene_nodes': scene_nodes, 'scene_revision': scene_revision,
+                    'post_processing_revision': post_processing.revision(processor, stack) if processor else None,
                     'objects': objects, 'backend_state': getattr(app.getBackend(), '_backend_state').name,
                     'gcode_build_plates': list(getattr(scene, 'gcode_dict', {}).keys()),
                     'project_location': self._project_location(app)}
+        if action == 'reset_settings' and payload.get('expected_configuration') != configuration_ops.revision(stack):
+            raise ValueError('Cura configuration changed after confirmation')
         index = payload.get('extruder')
         if index is not None:
             if not isinstance(index, int) or not 0 <= index < len(stack.extruderList):
@@ -240,8 +376,21 @@ class CuraMcpBridge(QObject, Extension):
             if len(keys) > 200:
                 raise ValueError('Read at most 200 settings per call')
             return {'settings': {key: {'value': stack.getProperty(key, 'value'),
-                'type': stack.getProperty(key, 'type'), 'enabled': stack.getProperty(key, 'enabled')}
+                'type': stack.getProperty(key, 'type'), 'enabled': stack.getProperty(key, 'enabled'),
+                'user_override': stack.userChanges.getInstance(key) is not None}
                 for key in keys if key in stack.getAllKeys()}}
+        if action == 'reset_settings':
+            keys = payload.get('keys')
+            known = stack.getAllKeys()
+            if (not isinstance(keys, list) or not 1 <= len(keys) <= 100 or
+                    any(not isinstance(key, str) or key not in known for key in keys)):
+                raise ValueError('Provide 1 to 100 known Cura settings')
+            removed = []
+            for key in dict.fromkeys(keys):
+                if stack.userChanges.getInstance(key) is not None:
+                    stack.userChanges.removeInstance(key)
+                    removed.append(key)
+            return {'reset': removed, 'values': {key: stack.getProperty(key, 'value') for key in keys}}
         if action == 'set_settings':
             values = payload.get('values')
             if not isinstance(values, dict) or not values or len(values) > 100:
@@ -272,9 +421,15 @@ class CuraMcpBridge(QObject, Extension):
                 from UM.Backend.Backend import BackendState
                 if getattr(app.getBackend(), '_backend_state') != BackendState.Done:
                     raise ValueError('Slicing has not finished; refusing stale export')
+            pause_layer = None
+            if processor:
+                if payload.get('expected_post_processing') != post_processing.revision(processor, stack):
+                    raise ValueError('Cura post-processing scripts changed after confirmation')
+                lines, pause_layer = post_processing.export_lines(processor, stack, lines)
             with open(filename, 'x', encoding='utf-8') as output:
                 output.writelines(lines)
-            return {'exported': True, 'file_path': filename, 'bytes': os.path.getsize(filename)}
+            return {'exported': True, 'file_path': filename, 'bytes': os.path.getsize(filename),
+                    'griffin_pause_layer': pause_layer}
         raise ValueError('Unknown workspace command')
 
     def _project_location(self, app):

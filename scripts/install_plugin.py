@@ -3,12 +3,12 @@ from pathlib import Path
 import argparse,csv,io,json,os,shutil,subprocess,sys,tempfile,time
 
 SOURCE=Path(__file__).resolve().parents[1]/'cura_plugin/CuraMcpBridge'
-PLUGIN_FILES=('__init__.py','plugin.json','CuraMcpBridge.py','project_io.py')
+PLUGIN_FILES=('__init__.py','plugin.json','CuraMcpBridge.py','project_io.py','scene_ops.py','post_processing.py','configuration_ops.py','comparison.py')
 
 def default_config_dir():
-    if sys.platform=='darwin':return Path.home()/'Library/Application Support/cura/5.13'
+    if sys.platform=='darwin':return Path.home()/'Library/Application Support/cura'/os.environ.get('CURA_MCP_CURA_VERSION','5.14')
     if sys.platform=='win32':
-        return Path(os.environ.get('APPDATA',str(Path.home()/'AppData/Roaming')))/'cura/5.13'
+        return Path(os.environ.get('APPDATA',str(Path.home()/'AppData/Roaming')))/'cura'/os.environ.get('CURA_MCP_CURA_VERSION','5.14')
     raise RuntimeError('Specify --config-dir for another platform; only Windows/macOS desktop defaults are defined.')
 
 def cura_running():

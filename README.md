@@ -1,4 +1,4 @@
-# UltiMaker S5 Interfacing
+# Cura MCP
 
 A local MCP platform for the **UltiMaker S5** and **Cura**, with a loopback Cura
 plugin, a dependency-free Node stdio MCP server, guarded printer operations, and
@@ -11,7 +11,7 @@ with or supported by UltiMaker.
 |---|---|
 | Printer | UltiMaker S5 R1 |
 | Printer firmware | **9.0.3.0** |
-| UltiMaker Cura | **5.13.0** |
+| UltiMaker Cura | **5.14.0** |
 
 These are the versions used for the documented integration. Other versions
 require validation; see [tested versions](docs/TESTED.md).
@@ -20,6 +20,10 @@ require validation; see [tested versions](docs/TESTED.md).
 
 - Inspect Cura's machine, extruders, settings, scene and slicer state.
 - Load models/projects, change settings, request slicing and export G-code.
+- Place and transform models, set per-model overrides, select profiles, inspect
+  layers, capture previews, and compare slicing variants using the
+  [sample STL](examples/comparison-sample.stl).
+- Discover native extension menus and queue local Cura package operations.
 - Save a native full-workspace 3MF project: Save, Save As with a new filename,
   Save As in another folder, and asynchronous completion/status.
 - Inspect a catalog of **130 local API paths / 161 HTTP operations**, including
@@ -50,7 +54,7 @@ MCP client --stdio--> Node MCP server --loopback token--> Cura plugin --> Cura
 4. Begin with `cura_status` and `printer_api_catalog`. Writes require exact-action
    authorization and a matching short-lived confirmation token.
 
-See the [18-tool reference](docs/TOOLS.md), [tested versions](docs/TESTED.md),
+See the [26-tool reference](docs/TOOLS.md), [tested versions](docs/TESTED.md),
 [known shortcomings and TODOs](docs/KNOWN_ISSUES.md), and [security/privacy](SECURITY.md).
 These upstream repositories are particularly relevant to extending the bridge
 and investigating the printer hardware:
@@ -80,7 +84,8 @@ implemented MCP tool.
 
 ## Requirements and checks
 
-- Cura **5.13.0** is the tested base; other versions are not established compatible.
+- Cura **5.14.0** is the live test target for this release. For a 5.13 installation, set `CURA_MCP_CURA_VERSION=5.13` for the installer and MCP runtime. An explicit `CURA_MCP_BRIDGE_CONNECTION_PATH` overrides the runtime default.
+- See [version differences](docs/CURA_VERSION_DIFFERENCES.md) for the 5.13 and 5.14 deployment requirements. The [scene operations](docs/CURA_SCENE_OPERATIONS.md), [configuration and profiles](docs/CURA_CONFIGURATION.md), and [navigation and extensions](docs/CURA_NAVIGATION_AND_EXTENSIONS.md) notes cover the desktop tools and their parameters.
 - Node.js 20+ and Python 3.10+; Cura supplies its own Qt/Python plugin runtime.
 - macOS Keychain or Windows Credential Manager for printer Digest pairing.
 - A C++11 compiler is needed only for the optional offline controller tests.
@@ -99,12 +104,10 @@ offline tests, an accepted request or a sliced file as proof of a successful pri
 
 ## Release and attribution
 
-Public source release **0.1.7** includes platform deployment guides and original
-install/diagnostic helpers alongside the local bridge.
-The current `main` branch additionally includes the two-STM32 controller draft
-and expanded hardware/NFC research. Those newer notes are not a replacement
-downloadable release asset; use the current branch for the latest research.
+Release **0.1.8** targets Cura 5.14.0 and includes an original STL sample for
+testing slice comparisons.
+The repository also includes the two-STM32 controller draft and hardware/NFC research.
 See [changelog](CHANGELOG.md), [sanitization policy](docs/SANITIZATION.md),
 [source references](hardware/SOURCES.md), [notices](NOTICE.md) and [MIT license](LICENSE).
 Vendor firmware, recovery images, service source dumps, raw device captures,
-printed models and proprietary schematics are not redistributed.
+third-party model files and proprietary schematics are not redistributed.
