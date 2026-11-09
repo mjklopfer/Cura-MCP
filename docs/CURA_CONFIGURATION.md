@@ -9,4 +9,33 @@ Call `cura_configuration` to discover the active printer and the choices Cura ex
 
 These operations affect the desktop slicer. Selecting a material or print core in Cura changes the slicer's configuration for that slot.
 
+## Keep or discard profile overrides
+
+When a change triggers Cura's **Discard or Keep changes** dialog, Cura 5.14
+uses the application preference `cura/choice_on_profile_override`.
+Set the policy in the dialog's drop-down and answer the current prompt
+using the enabled button. The policy applies to subsequent changes in
+that Cura installation.
+
+| Cura option | Stored value | What happens |
+| --- | --- | --- |
+| **Always ask me this** | `always_ask` | A person must choose **Keep changes** or **Discard changes** when the dialog appears. |
+| **Keep and never ask again** | `always_keep` | Cura carries over the current overrides automatically. |
+| **Discard and never ask again** | `always_discard` | Cura discards current overrides automatically and uses the destination profile's defaults for those settings. |
+
+For unattended profile changes, configure one of the automatic policies
+in Cura before running the MCP workflow. Use **Keep** when the job relies
+on tuned overrides and **Discard** when the destination profile should
+supply those values. Restore **Always ask** in Cura's preferences when
+interactive review is needed again.
+
+The bridge follows Cura's existing preference. It currently exposes no
+per-operation override policy or dialog response tool. With **Always ask**
+enabled, stop before slicing if the dialog is pending. After Cura resolves
+the change, use `cura_configuration` to check the selected core, material
+or profile and `cura_settings` to verify the effective values the job
+depends on. The native project-open confirmation has its own policy.
+
+[Cura 5.14 application source](https://github.com/Ultimaker/Cura/blob/5.14.0/cura/CuraApplication.py) · [Cura 5.14 profile changes dialog](https://github.com/Ultimaker/Cura/blob/5.14.0/resources/qml/Dialogs/DiscardOrKeepProfileChangesDialog.qml)
+
 Use `import_profile` with an absolute `.curaprofile` path inside the staging directory. The confirmation binds the file contents. Use `export_profile` with an existing custom profile ID and a new staged `.curaprofile` path. File export preserves the native global and per-extruder profile containers.
