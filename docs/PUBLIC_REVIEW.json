@@ -1,11 +1,11 @@
 {
-  "public_version": "0.1.10",
+  "public_version": "0.1.11",
   "review_scope": "Tracked source and release delta; private runtime configuration and device captures excluded",
   "source_identifier_scan": "passed; no personal paths, local job names or device identifiers found",
   "privacy_check": "passed",
   "runtime_printer_config": "excluded by privacy check and gitignore",
   "node_tests": {
-    "passed": 6,
+    "passed": 7,
     "failed": 0
   },
   "python_bridge_tests": {
@@ -20,5 +20,7 @@
   "other_platforms": "Cura 5.13 and macOS cloud selection/submission not live-verified",
   "mcp_activation": "Reconnect client after installing updated plugin/runtime to refresh tool manifest",
   "vendor_implementation_source": "not included",
-  "release_commit_metadata": "neutral contributor attribution; earlier published commit metadata outside this release review"
+  "release_commit_metadata": "neutral contributor attribution; earlier published commit metadata outside this release review",
+  "live_local_monitoring": "filtered progress/time estimates and one inline camera JPEG verified via fresh stdio MCP; no writes",
+  "cura_plugin_version": "0.1.10 unchanged for runtime-only monitor tools"
 }

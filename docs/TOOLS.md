@@ -1,6 +1,6 @@
 # MCP tools
 
-There are 33 tools. The [complete local HTTP inventory](ENDPOINTS.csv) lists printer method/path operations. Read-only inspection of Cura
+There are 35 tools. The [complete local HTTP inventory](ENDPOINTS.csv) lists printer method/path operations. Read-only inspection of Cura
 uses an authenticated loopback POST internally to schedule work on Cura's main
 thread; it does not imply a printer write.
 
@@ -8,6 +8,8 @@ thread; it does not imply a printer write.
 |---|---|
 | cura_status | Read loopback bridge status |
 | printer_status | Read printer/cluster job status |
+| printer_print_status | Read progress and elapsed/remaining print-time estimates |
+| printer_camera_snapshot | Return one bounded webcam still as an inline MCP image |
 | preflight_print_action | Check requested upload/start readiness |
 | create_print_confirmation | Bind upload/start to an exact request and state |
 | upload_gcode | Transfer an authorized staged printable file |
@@ -43,6 +45,9 @@ thread; it does not imply a printer write.
 See [cloud workflow and deployment](CLOUD_PRINTING.md). Updating the installed
 plugin requires a Cura restart; new tool discovery also requires an MCP runtime
 restart/reconnect. The old connected tool list does not update itself.
+
+The [print monitor and webcam tools](PRINTER_MONITORING.md) are runtime-only
+features and do not require a Cura restart or plugin update.
 
 The catalog exposes 94 printer templates/120 operations and 36 cluster templates/
 41 operations. Each method is discovered through existing generic tools rather

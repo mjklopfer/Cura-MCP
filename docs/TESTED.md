@@ -1,5 +1,15 @@
 # Tested versions and evidence boundaries
 
+Runtime 0.1.11 monitoring: a fresh stdio MCP process advertised 35 tools.
+The local progress tool returned current printing state, elapsed time and a
+remaining estimate. The webcam tool followed the printer's native snapshot
+redirect and returned a JPEG as an inline MCP image block. No print-control
+write was made. Offline tests cover time-source fallback, missing estimates,
+read-only HTTP methods, snapshot redirect restrictions, MIME/signature checks
+and size limits. The captured image and job details remain private runtime
+evidence and are not included here. Cura plugin 0.1.10 is unchanged; this
+runtime-only addition does not require Cura restart.
+
 Release 0.1.10 on Windows Cura 5.14.0: live discovery found a previously
 configured cloud printer profile. Confirmation and native connection selection
 returned `selected` with connected/logged-in/active state while the local-IP

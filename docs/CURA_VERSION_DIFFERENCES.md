@@ -1,5 +1,9 @@
 # Cura 5.13.0 and 5.14.0 deployment differences
 
+Runtime 0.1.11 adds local progress and webcam snapshot tools independent of
+Cura's plugin APIs. They need only the local printer origin; no Cura plugin
+update or desktop restart. Reconnect the MCP runtime to load the new tools.
+
 Release 0.1.10 adds existing cloud profile discovery/selection via the native
 machine and output-device managers. No local HTTP origin is required. Live
 selection targets Windows Cura 5.14.0; 5.13/macOS behavior remains unverified.

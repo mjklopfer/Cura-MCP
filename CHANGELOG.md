@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.11
+
+- Add read-only local print progress with elapsed/remaining-time estimates.
+- Return bounded webcam stills as inline MCP images with restricted snapshot
+  redirects; keep runtime images and job data outside the repository.
+- Runtime-only update; no Cura plugin restart required.
+
 ## 0.1.10
 
 - Discover preinstalled cloud printer profiles independently of local HTTP
