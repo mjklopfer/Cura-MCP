@@ -1,6 +1,6 @@
 # MCP tools
 
-There are 35 tools. The [complete local HTTP inventory](ENDPOINTS.csv) lists printer method/path operations. Read-only inspection of Cura
+There are 37 tools. The [complete local HTTP inventory](ENDPOINTS.csv) lists printer method/path operations. Read-only inspection of Cura
 uses an authenticated loopback POST internally to schedule work on Cura's main
 thread; it does not imply a printer write.
 
@@ -10,6 +10,8 @@ thread; it does not imply a printer write.
 | printer_status | Read printer/cluster job status |
 | printer_print_status | Read progress and elapsed/remaining print-time estimates |
 | printer_camera_snapshot | Return one bounded webcam still as an inline MCP image |
+| printer_camera_inventory | Probe selected native camera indices, default 0 and 1 |
+| printer_camera_snapshots | Return labeled stills with partial-success handling |
 | preflight_print_action | Check requested upload/start readiness |
 | create_print_confirmation | Bind upload/start to an exact request and state |
 | upload_gcode | Transfer an authorized staged printable file |

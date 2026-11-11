@@ -284,7 +284,7 @@ async function handle(request) {
     return {
       protocolVersion: request.params?.protocolVersion || "2025-06-18",
       capabilities: { tools: {} },
-      serverInfo: { name: "cura-mcp-bridge", version: "0.1.11" }
+      serverInfo: { name: "cura-mcp-bridge", version: "0.1.12" }
     };
   }
   if (request.method === "tools/list") return { tools: [...tools, ...printerApiTools, ...curaApiTools, ...cloudApiTools, ...printerMonitorTools] };

@@ -1,5 +1,13 @@
 # Tested versions and evidence boundaries
 
+Runtime 0.1.12 multi-camera preparation: fresh stdio discovery advertised
+37 tools. Native index 0 returned a JPEG; index 1 returned HTTP 404. Inventory
+reported available/not_exposed, and a two-index capture returned the working
+image with a separate missing-feed result. No USB camera was added and no
+printer service was changed. Two-camera acquisition remains hardware-unverified.
+Offline tests cover two available indices, partial/all-missing results,
+distinct-index validation, and explicitly allowed versus rejected service ports.
+
 Runtime 0.1.11 monitoring: a fresh stdio MCP process advertised 35 tools.
 The local progress tool returned current printing state, elapsed time and a
 remaining estimate. The webcam tool followed the printer's native snapshot

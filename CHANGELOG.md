@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.12
+
+- Prepare native second-camera discovery and labeled multi-camera snapshots.
+- Keep working images when another feed is missing; distinguish unexposed
+  camera indices from hardware enumeration or network failures.
+- Allow explicitly configured same-printer snapshot-service ports, without
+  opening streams or changing printer services.
+
 ## 0.1.11
 
 - Add read-only local print progress with elapsed/remaining-time estimates.

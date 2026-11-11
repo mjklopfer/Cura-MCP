@@ -1,5 +1,5 @@
 {
-  "public_version": "0.1.11",
+  "public_version": "0.1.12",
   "review_scope": "Tracked source and release delta; private runtime configuration and device captures excluded",
   "source_identifier_scan": "passed; no personal paths, local job names or device identifiers found",
   "privacy_check": "passed",
@@ -22,5 +22,6 @@
   "vendor_implementation_source": "not included",
   "release_commit_metadata": "neutral contributor attribution; earlier published commit metadata outside this release review",
   "live_local_monitoring": "filtered progress/time estimates and one inline camera JPEG verified via fresh stdio MCP; no writes",
-  "cura_plugin_version": "0.1.10 unchanged for runtime-only monitor tools"
+  "cura_plugin_version": "0.1.10 unchanged for runtime-only monitor tools",
+  "live_multicamera_preparation": "native index 0 available, index 1 not exposed (404); partial-success inline image verified; second hardware camera not installed/tested"
 }

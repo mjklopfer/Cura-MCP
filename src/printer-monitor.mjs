@@ -1,4 +1,4 @@
-import {printerBaseUrl} from './printer-config.mjs';
+import {printerBaseUrl, cameraServicePorts} from './printer-config.mjs';
 
 const MAX_BYTES=5*1024*1024;
 function tool(name,description,properties={}){return {name,description,
@@ -7,7 +7,11 @@ function tool(name,description,properties={}){return {name,description,
 export const printerMonitorTools=[
   tool('printer_print_status','Read current local printer/job state, progress, elapsed time and estimated remaining print time. Omits device serials and account identifiers. Never changes the printer.'),
   tool('printer_camera_snapshot','Capture one local printer webcam still as an inline MCP image. Bounded to 5 MiB; follows only same-printer snapshot redirects. Does not stream, save to disk or change the printer.',
-    {camera_index:{type:'integer',minimum:0,maximum:15,default:0}})
+    {camera_index:{type:'integer',minimum:0,maximum:15,default:0}}),
+  tool('printer_camera_inventory','Probe selected native camera indices with bounded still requests. Distinguishes available feeds, unexposed indices and errors; not USB hardware enumeration.',
+    {camera_indices:{type:'array',items:{type:'integer',minimum:0,maximum:15},minItems:1,maxItems:4,uniqueItems:true,default:[0,1]}}),
+  tool('printer_camera_snapshots','Capture selected native camera feeds as labeled inline images. Partial success preserves working cameras; captures are sequential, not synchronized. Does not stream or save images.',
+    {camera_indices:{type:'array',items:{type:'integer',minimum:0,maximum:15},minItems:1,maxItems:4,uniqueItems:true,default:[0,1]}})
 ];
 async function bounded(response,limit){
   if(Number(response.headers.get('content-length'))>limit){await response.body?.cancel();throw Error('Printer response exceeds size limit');}
@@ -48,7 +52,7 @@ export async function readPrintStatus(){
 }
 function safeSnapshotRedirect(location,current,origin,index){
   const next=new URL(location,current);
-  const portAllowed=next.port===origin.port||next.port==='8080';
+  const portAllowed=next.port===origin.port||cameraServicePorts().includes(Number(next.port|| (next.protocol==='https:'?443:80)));
   const snapshotPath=next.pathname===`/api/v1/camera/${index}/snapshot`&&!next.search;
   const cameraPath=next.pathname==='/'&&next.searchParams.get('action')==='snapshot'&&
     [...next.searchParams.keys()].length===1;
@@ -68,7 +72,7 @@ export async function readCameraSnapshot(args={}){
     if(redirects>=2||!location)throw Error('Invalid or excessive camera snapshot redirects');
     url=safeSnapshotRedirect(location,url,origin,index);
   }
-  if(!response.ok){await response.body?.cancel();throw Error(`Printer camera snapshot returned HTTP ${response.status}`);}
+  if(!response.ok){await response.body?.cancel();throw Object.assign(Error(`Printer camera snapshot returned HTTP ${response.status}`),{http_status:response.status});}
   const type=(response.headers.get('content-type')||'').split(';')[0].trim().toLowerCase();
   if(!['image/jpeg','image/png'].includes(type)){await response.body?.cancel();throw Error('Camera did not return a JPEG or PNG still image');}
   const data=await bounded(response,MAX_BYTES);
@@ -77,13 +81,40 @@ export async function readCameraSnapshot(args={}){
   if(!valid)throw Error('Invalid camera image signature');
   return {captured_at:new Date().toISOString(),camera_index:index,mime_type:type,byte_count:data.length,image_base64:data.toString('base64')};
 }
+function cameraIndices(args){
+  const indices=args.camera_indices??[0,1];
+  if(!Array.isArray(indices)||!indices.length||indices.length>4||new Set(indices).size!==indices.length||
+     indices.some(i=>!Number.isInteger(i)||i<0||i>15))throw Error('Provide 1 to 4 distinct camera indices from 0 to 15');
+  return indices;
+}
+async function selectedCameras(args,withImages){
+  const indices=cameraIndices(args),cameras=[],images=[];
+  // Sequential probes bound load on the printer and isolate one failed feed.
+  for(const index of indices){
+    try{
+      const {image_base64,...metadata}=await readCameraSnapshot({camera_index:index});
+      cameras.push({status:'available',...metadata});
+      if(withImages)images.push({...metadata,image_base64});
+    }catch(error){cameras.push({camera_index:index,status:error.http_status===404?'not_exposed':'error',
+      ...(error.http_status?{http_status:error.http_status}:{}),detail:error.message});}
+  }
+  return {checked_at:new Date().toISOString(),cameras,...(withImages?{images}:{}),
+    inventory_method:'Bounded native snapshot probes; unavailable indices do not prove missing USB hardware.',
+    ...(withImages?{synchronized:false}:{}),
+    all_cameras_unavailable:cameras.every(c=>c.status!=='available')};
+}
 export async function handlePrinterMonitor(name,args={}){
   if(name==='printer_print_status')return readPrintStatus();
   if(name==='printer_camera_snapshot')return readCameraSnapshot(args);
+  if(name==='printer_camera_inventory')return selectedCameras(args,false);
+  if(name==='printer_camera_snapshots')return selectedCameras(args,true);
   throw Error('Unknown printer monitor tool');
 }
 export function monitorMcpResult(payload){
-  const {image_base64,...metadata}=payload;
+  const {image_base64,images,...metadata}=payload;
   return {content:[{type:'text',text:JSON.stringify(metadata,null,2)},
-    ...(image_base64?[{type:'image',mimeType:metadata.mime_type,data:image_base64}]:[])],structuredContent:metadata};
+    ...(image_base64?[{type:'image',mimeType:metadata.mime_type,data:image_base64}]:[]),
+    ...(images??[]).flatMap(im=>[{type:'text',text:`Camera ${im.camera_index} — ${im.captured_at}`},
+      {type:'image',mimeType:im.mime_type,data:im.image_base64}])],structuredContent:metadata,
+    ...(payload.all_cameras_unavailable?{isError:true}:{})};
 }

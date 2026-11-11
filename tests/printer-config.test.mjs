@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {printerBaseUrl} from '../src/printer-config.mjs';
+import {printerBaseUrl,cameraServicePorts} from '../src/printer-config.mjs';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -25,6 +25,13 @@ test('printer origin has no default and rejects credentials or URL suffixes',()=
     assert.equal(printerBaseUrl(),'http://printer.invalid');
     fs.writeFileSync(process.env.CURA_MCP_PRINTER_CONFIG_PATH,JSON.stringify({printer_origin:'http://updated.invalid'}));
     assert.equal(printerBaseUrl(),'http://updated.invalid');
+    assert.deepEqual(cameraServicePorts(),[8080]);
+    fs.writeFileSync(process.env.CURA_MCP_PRINTER_CONFIG_PATH,JSON.stringify({printer_origin:'http://updated.invalid',camera_service_ports:[8080,8081]}));
+    assert.deepEqual(cameraServicePorts(),[8080,8081]);
+    for(const ports of [[],[0],[8080,8080],['8081'],[65536]]){
+      fs.writeFileSync(process.env.CURA_MCP_PRINTER_CONFIG_PATH,JSON.stringify({printer_origin:'http://updated.invalid',camera_service_ports:ports}));
+      assert.throws(()=>cameraServicePorts(),/distinct integer/);
+    }
     fs.writeFileSync(process.env.CURA_MCP_PRINTER_CONFIG_PATH,'{broken');
     assert.throws(()=>printerBaseUrl());
   } finally {
