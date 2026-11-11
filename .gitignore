@@ -6,6 +6,7 @@ __pycache__/
 .env.*
 !.env.example
 *connection*.json
+cura-mcp-printer.json
 print_files/
 local_config/
 local_captures/

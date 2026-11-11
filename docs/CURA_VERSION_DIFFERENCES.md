@@ -1,5 +1,17 @@
 # Cura 5.13.0 and 5.14.0 deployment differences
 
+Release 0.1.10 adds existing cloud profile discovery/selection via the native
+machine and output-device managers. No local HTTP origin is required. Live
+selection targets Windows Cura 5.14.0; 5.13/macOS behavior remains unverified.
+Reconnect the MCP runtime after updating to discover the three connection tools.
+
+Release 0.1.9 adds a native UM3NetworkPrinting cloud adapter. Its source-level
+integration targets Cura 5.14.0, including internal cached account/upload
+attributes. Offline cloud guards are tested; live 5.13 and macOS cloud writes
+remain unverified. Update both plugin and MCP runtime, then restart Cura and
+reconnect the MCP client to discover the four new tools. See
+[cloud workflow](CLOUD_PRINTING.md) for exact boundaries.
+
 | Item | Cura 5.13.0 | Cura 5.14.0 |
 | --- | --- | --- |
 | UltiMaker SDK | 8.12.x | 8.13.x |

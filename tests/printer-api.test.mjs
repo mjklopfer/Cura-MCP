@@ -28,6 +28,8 @@ test('printer API catalog, real transport, request binding, busy-state guard and
   t.after(()=>rm(folder,{recursive:true,force:true}));
   const staged=path.join(folder,'staging');await mkdir(staged);
   process.env.CURA_PRINTER_BASE_URL=`http://127.0.0.1:${mock.address().port}`;
+  // Never inherit a developer workstation's hot-reload printer origin file.
+  process.env.CURA_MCP_PRINTER_CONFIG_PATH=path.join(folder,'isolated-printer-config.json');
   process.env.CURA_MCP_PRINT_FILE_ROOT=staged;
   const {handlePrinterApi}=await import('../src/printer-api.mjs');
   const catalog=await handlePrinterApi('printer_api_catalog',{});

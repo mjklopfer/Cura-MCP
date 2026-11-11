@@ -1,6 +1,6 @@
 # MCP tools
 
-There are 26 tools. The [complete local HTTP inventory](ENDPOINTS.csv) lists every method/path. Read-only inspection of Cura
+There are 33 tools. The [complete local HTTP inventory](ENDPOINTS.csv) lists printer method/path operations. Read-only inspection of Cura
 uses an authenticated loopback POST internally to schedule work on Cura's main
 thread; it does not imply a printer write.
 
@@ -32,6 +32,17 @@ thread; it does not imply a printer write.
 | cura_operation | Execute the authorized Cura operation |
 | cura_project_save_status | Poll native project-save completion or failure |
 | cura_path_info | Check a path from Cura's process without returning its contents |
+| cura_cloud_devices | Discover native cloud destinations and cached state |
+| cura_cloud_connections | List preinstalled cloud printer profiles and selection |
+| confirm_cura_cloud_connection | Bind selection of an existing cloud printer |
+| cura_cloud_connect | Select profile and native cloud output without printing |
+| confirm_cura_cloud_print | Bind current slice and explicit cloud destination |
+| cura_cloud_print | Start asynchronous native cloud submission |
+| cura_cloud_print_status | Poll submission success/pending approval/error |
+
+See [cloud workflow and deployment](CLOUD_PRINTING.md). Updating the installed
+plugin requires a Cura restart; new tool discovery also requires an MCP runtime
+restart/reconnect. The old connected tool list does not update itself.
 
 The catalog exposes 94 printer templates/120 operations and 36 cluster templates/
 41 operations. Each method is discovered through existing generic tools rather

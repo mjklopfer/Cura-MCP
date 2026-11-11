@@ -12,6 +12,7 @@ import readline from "node:readline";
 import crypto from "node:crypto";
 import {printerApiTools, handlePrinterApi} from './printer-api.mjs';
 import {curaApiTools, handleCuraApi} from './cura-api.mjs';
+import {cloudApiTools, handleCloudApi} from './cloud-api.mjs';
 
 import {connectionPath as CONNECTION_PATH} from "./cura-connection.mjs";
 import {printerBaseUrl} from "./printer-config.mjs";
@@ -282,11 +283,16 @@ async function handle(request) {
     return {
       protocolVersion: request.params?.protocolVersion || "2025-06-18",
       capabilities: { tools: {} },
-      serverInfo: { name: "cura-mcp-bridge", version: "0.1.8" }
+      serverInfo: { name: "cura-mcp-bridge", version: "0.1.10" }
     };
   }
-  if (request.method === "tools/list") return { tools: [...tools, ...printerApiTools, ...curaApiTools] };
+  if (request.method === "tools/list") return { tools: [...tools, ...printerApiTools, ...curaApiTools, ...cloudApiTools] };
   if (request.method === "tools/call") {
+    if (cloudApiTools.some(tool => tool.name === request.params?.name)) {
+      const payload = await handleCloudApi(request.params.name, request.params.arguments || {});
+      return {content:[{type:'text',text:JSON.stringify(payload,null,2)}],structuredContent:payload,
+        isError:!!payload.error || payload.status==='error'};
+    }
     if (curaApiTools.some(tool => tool.name === request.params?.name)) {
       const payload = await handleCuraApi(request.params.name, request.params.arguments || {});
       if (request.params.name === 'cura_snapshot' && payload.image_png) {

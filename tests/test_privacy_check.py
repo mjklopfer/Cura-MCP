@@ -18,5 +18,12 @@ class PrivacyVersionTest(unittest.TestCase):
     def test_other_network_address_is_rejected_even_beside_firmware_label(self):
         address='.'.join(map(str,(192,0,2,1)))
         self.assertFalse(self.check_text('Printer firmware endpoint: '+address)['passed'])
+    def test_runtime_printer_configuration_is_not_publishable(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            (root/'cura-mcp-printer.json').write_text('{"printer_origin":"http://printer.invalid"}')
+            result=privacy.scan(root)
+            self.assertFalse(result['passed'])
+            self.assertEqual(result['findings'][0]['rule'],'private-runtime-file')
 
 if __name__=='__main__':unittest.main()

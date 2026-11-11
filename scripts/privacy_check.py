@@ -23,7 +23,7 @@ def scan(root=ROOT):
         relative=path.relative_to(root).as_posix()
         if path.suffix not in ALLOWED_EXTENSIONS and path.name not in SPECIAL and relative not in ASCII_FIXTURES:
             findings.append({'file':relative,'rule':'unreviewed-file-type'});continue
-        if path.name in {'connection.json','cura-mcp-bridge.json','.env'}:
+        if path.name in {'connection.json','cura-mcp-bridge.json','cura-mcp-printer.json','.env'}:
             findings.append({'file':relative,'rule':'private-runtime-file'});continue
         try:text=path.read_text(encoding='utf-8')
         except UnicodeError:

@@ -67,3 +67,12 @@
 Use existing Cura operations, scene/container APIs and documented printer routes
 when extending the project. Keep UI operations on Cura's main thread, preserve
 confirmation/staging guards, and add meaningful offline tests before hardware tests.
+# Cloud tool activation and verification
+
+The native cloud adapter requires both the 0.1.9 Cura plugin and MCP runtime.
+After upgrading, restart Cura and reconnect the MCP client. Existing sessions
+cache the earlier tool list and JavaScript modules; editing configuration or
+files alone does not replace that running process. Native cloud discovery is
+verified on Windows Cura 5.14.0. New-tool cloud submission remains unverified
+with an actual new job; offline lifecycle tests are not physical validation.
+See [cloud workflow](CLOUD_PRINTING.md).

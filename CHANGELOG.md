@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.10
+
+- Discover preinstalled cloud printer profiles independently of local HTTP
+  configuration and select them through native Cura connection management.
+- Add guarded connection selection without login automation or print submission.
+
+## 0.1.9
+
+- Add native Cura cloud destination discovery, guarded current-slice submission
+  and asynchronous completion/error status with session duplicate protection.
+- Re-read an optional user-local printer origin file on each HTTP operation.
+- Document connector/plugin restart requirements and cloud verification limits.
+
 ## Controller draft 0.2.0
 
 - Separate STM32 Air Manager and Material Station bench targets; suggested Nucleo boards and 3.3 V signal plan.

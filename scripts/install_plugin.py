@@ -3,7 +3,7 @@ from pathlib import Path
 import argparse,csv,io,json,os,shutil,subprocess,sys,tempfile,time
 
 SOURCE=Path(__file__).resolve().parents[1]/'cura_plugin/CuraMcpBridge'
-PLUGIN_FILES=('__init__.py','plugin.json','CuraMcpBridge.py','project_io.py','scene_ops.py','post_processing.py','configuration_ops.py','comparison.py')
+PLUGIN_FILES=('__init__.py','plugin.json','CuraMcpBridge.py','project_io.py','scene_ops.py','post_processing.py','configuration_ops.py','comparison.py','cloud_ops.py')
 
 def default_config_dir():
     if sys.platform=='darwin':return Path.home()/'Library/Application Support/cura'/os.environ.get('CURA_MCP_CURA_VERSION','5.14')

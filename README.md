@@ -104,7 +104,8 @@ offline tests, an accepted request or a sliced file as proof of a successful pri
 
 ## Release and attribution
 
-Release **0.1.8** targets Cura 5.14.0 and includes an original STL sample for
+Release **0.1.10** adds [preinstalled cloud printer selection and native cloud printing](docs/CLOUD_PRINTING.md) to the
+Cura 5.14.0 platform and includes an original STL sample for
 testing slice comparisons.
 The repository also includes the two-STM32 controller draft and hardware/NFC research.
 See [changelog](CHANGELOG.md), [sanitization policy](docs/SANITIZATION.md),

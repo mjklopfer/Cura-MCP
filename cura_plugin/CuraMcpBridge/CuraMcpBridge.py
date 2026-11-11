@@ -8,7 +8,7 @@ import threading
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from .project_io import path_info, plan_save, atomic_project_write
-from . import scene_ops, post_processing, configuration_ops, comparison
+from . import scene_ops, post_processing, configuration_ops, comparison, cloud_ops
 
 from PyQt6.QtCore import QObject, QTimer, QUrl
 
@@ -44,6 +44,7 @@ class CuraMcpBridge(QObject, Extension):
         self._tracking_connected = False
         self._save_jobs = {}
         self._comparison = None
+        self._cloud = cloud_ops.CloudOperations()
         self._snapshot = {"schema_version": 1, "ready": False, "detail": "Cura bridge is starting."}
         self._connection_path = os.path.join(self._preferences_directory(), self.CONNECTION_FILE)
         self._token = self._load_or_create_token()
@@ -80,7 +81,7 @@ class CuraMcpBridge(QObject, Extension):
             self._snapshot = {
                 "schema_version": 1,
                 "ready": True,
-                "bridge_version": "0.1.8",
+                "bridge_version": "0.1.10",
                 "process_id": os.getpid(),
                 "printer": None,
                 "active_profile": None,
@@ -117,7 +118,7 @@ class CuraMcpBridge(QObject, Extension):
                                         'inspect_extensions', 'navigate', 'inspect_configuration',
                                         'set_configuration', 'inspect_estimates', 'inspect_layers', 'snapshot',
                                         'compare_slices', 'comparison_status', 'cancel_comparison',
-                                        'manage_package', 'activate_extension_menu'} | scene_ops.ACTIONS | post_processing.ACTIONS:
+                                        'manage_package', 'activate_extension_menu'} | scene_ops.ACTIONS | post_processing.ACTIONS | cloud_ops.ACTIONS:
                     self.send_error(404)
                     return
                 if not secrets.compare_digest(self.headers.get("X-Cura-Bridge-Token", ""), bridge._token):
@@ -191,6 +192,8 @@ class CuraMcpBridge(QObject, Extension):
             self._tracking_connected = True
         if action == 'path_info':
             return path_info(payload.get('file_path'))
+        if action in {'inspect_cloud','cloud_print_status','inspect_cloud_connections','plan_cloud_connection'}:
+            return self._cloud.execute(app, action, payload)
         if action == 'project_save_status':
             job = self._save_jobs.get(payload.get('operation_id'))
             if job is None:
@@ -198,7 +201,7 @@ class CuraMcpBridge(QObject, Extension):
             return {key: value for key, value in job.items() if key not in ('job', 'callback')}
         mutations = {'load_file', 'set_settings', 'reset_settings', 'slice', 'save_project',
                      'set_configuration', 'compare_slices', 'manage_package',
-                     'activate_extension_menu'} | scene_ops.ACTIONS | post_processing.ACTIONS
+                     'activate_extension_menu', 'submit_cloud_print', 'connect_cloud'} | scene_ops.ACTIONS | post_processing.ACTIONS
         if action in mutations and any(j['status'] == 'running' for j in self._save_jobs.values()):
             raise ValueError('A project save is running; poll its status before changing the workspace')
         if action in {'comparison_status', 'cancel_comparison'}:
@@ -213,6 +216,24 @@ class CuraMcpBridge(QObject, Extension):
         if self._comparison and self._comparison.status == 'running' and action in (
                 mutations | {'export_gcode', 'inspect_estimates', 'inspect_layers'}):
             raise ValueError('A slice comparison is running; poll or cancel it first')
+        if action in mutations and any(j['status'] in ('starting','uploading') for j in self._cloud.jobs.values()):
+            raise ValueError('A cloud submission is running; poll its status before changing the workspace')
+        if action=='connect_cloud':
+            return self._cloud.execute(app, action, payload)
+        if action in {'plan_cloud_print','submit_cloud_print'}:
+            import hashlib
+            state = self._execute_workspace_command('inspect', {})
+            plate = app.getMultiBuildPlateModel().activeBuildPlate
+            chunks = getattr(app.getController().getScene(), 'gcode_dict', {}).get(plate, [])
+            digest = hashlib.sha256()
+            for chunk in chunks:
+                digest.update(chunk.encode('utf-8'))
+            context = {'machine_id':state['machine']['id'], 'build_plate':plate,
+                       'scene_revision':state['scene_revision'],
+                       'post_processing_revision':state['post_processing_revision'],
+                       'toolpath_sha256':digest.hexdigest(),
+                       'slice_ready':state['backend_state']=='Done' and bool(chunks)}
+            return self._cloud.execute(app, action, payload, context)
         if action == 'load_file':
             filename = payload.get('file_path')
             info = path_info(filename)

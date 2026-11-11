@@ -1,5 +1,24 @@
 # Tested versions and evidence boundaries
 
+Release 0.1.10 on Windows Cura 5.14.0: live discovery found a previously
+configured cloud printer profile. Confirmation and native connection selection
+returned `selected` with connected/logged-in/active state while the local-IP
+environment variable was unset. No upload or print was invoked. A fresh stdio
+runtime advertised 33 tools, including seven cloud tools. Switching to a
+different physical printer, expired-login recovery and macOS/5.13 selection
+remain unverified. Offline tests cover stale/unknown profile IDs, cross-action
+token reuse and refusing selection during uploads.
+
+Release 0.1.9 cloud checks on Windows Cura 5.14.0: updated plugin loaded;
+fresh stdio runtime advertised 30 tools, including all four cloud tools.
+Native cloud discovery returned a connected, logged-in destination with
+cached printing state. Local printer job status was readable through the
+updated origin-file configuration. No new cloud write was sent in this
+endpoint smoke test, avoiding duplication of an active job. Confirmation,
+callback/error and duplicate guards are covered offline, not an end-to-end
+new-tool submission result. Existing MCP client sessions must reconnect to
+reload the runtime and discover the new tools.
+
 | Component | Baseline | What is established |
 |---|---|---|
 | Cura | 5.14.0 | Windows desktop smoke tests covered scene edits, slice comparison and cancellation, settings restoration, preview, layers, STL and profile export, extension discovery and package inventory |
