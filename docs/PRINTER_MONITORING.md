@@ -104,3 +104,7 @@ operations retain their separate credential handling.
 
 Offline tests cover time fallback/missing values, image response blocks,
 read-only requests, redirect restrictions, invalid images and byte limits.
+
+## Hardware field notes
+
+See [S5 R1 USB multi-camera field notes](field-notes/S5_R1_USB_CAMERAS.md) for sanitized tests, failures, rollback and practical verification steps. These tests did not establish reliable simultaneous capture from the added cameras.
